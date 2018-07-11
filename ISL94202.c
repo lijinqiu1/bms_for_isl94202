@@ -183,6 +183,27 @@ void ISL94202_setCellBalanceFaultLevel(unsigned int mV)
     ISL94202_writeEEPROMVoltage(0x22, mV, 0x00);
 }
 
+unsigned int ISL94202_ReadCellBalanceDifference()
+{
+    //If the cells are closer than this the balancing stops
+    //defaults to 20mV
+    return ISL94202_readEEPROMWord(0x20);
+}
+unsigned int ISL94202_ReadCellBalanceStartV()
+{
+    return ISL94202_readEEPROMWord(0x1C);
+}
+unsigned int ISL94202_ReadCellBalanceStopV()
+{
+    return ISL94202_readEEPROMWord(0x1E);
+}
+unsigned int ISL94202_ReadCellBalanceFaultLevel()
+{
+    //If the difference is bigger than this its a fault and system gives up
+    //default 500mV
+    return ISL94202_readEEPROMWord(0x22);
+}
+
 void ISL94202_setFeature1(bool CellFActivatesPSD, bool XT2Mode, bool TGain,
 bool PreChargeFETEnabled,
                           bool disableOpenWireScan,
@@ -460,7 +481,7 @@ unsigned int ISL94202_getPackCurrentMA(unsigned int divisor)
 //    reading /= 2047;
 //    reading /= divisor;        //to allow for calibration
 
-    return reading;
+    return value;
 }
 
 //Returns a bitmask of the currently balancing cells

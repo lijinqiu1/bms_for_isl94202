@@ -30,6 +30,7 @@ unsigned int ISL94202_getPackCurrentMA();
 //Returns a bitmask of the currently balancing cells
 unsigned char ISL94202_getBalancingCells();
 
+unsigned char ISL94202_getCurrentStatus(unsigned char index);
 enum
 {
     DischargeOC_4mV = 0x00,
@@ -80,6 +81,11 @@ void ISL94202_setCellBalanceDifference(unsigned int mV);
 void ISL94202_setCellBalanceStartV(unsigned int mV);
 void ISL94202_setCellBalanceStopV(unsigned int mV);
 void ISL94202_setCellBalanceFaultLevel(unsigned int mV);
+
+unsigned int ISL94202_ReadCellBalanceDifference();
+unsigned int ISL94202_ReadCellBalanceStartV();
+unsigned int ISL94202_ReadCellBalanceStopV();
+unsigned int ISL94202_ReadCellBalanceFaultLevel();
 
 unsigned int ISL94202_milliVoltsToVScaleRaw(unsigned int mV);
 //Chip Features Control

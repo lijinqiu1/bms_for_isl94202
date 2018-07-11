@@ -137,7 +137,7 @@ int main(void)
     {
         printf("EOCThreshold OK\r\n");
     }
-
+    ISL94202_setCellCountSleepTimes(4,15,15);
     IICRXByte=ISL94202_readEEPROM(0x49);
     if (IICRXByte != 0xC3)
     {
@@ -149,24 +149,27 @@ int main(void)
         printf("CellCount OK\r\n");
     }
 
-//    IICRXByte = ISL94202_readEEPROM(0x4B);
-//    if ((IICRXByte & 0xc0) != 0x00)
-//    {
-//        ISL94202_writeEEPROM(0x4B,IICRXByte & 0x3f);
-//        printf("set balance off\r\n");
-//    }
-//    else
-//    {
-//        printf("balance off\r\n");
-//    }
-//
-//    Data = I2C_readReg8(0x50,0x17);
-//    if (Data != 0x74)
-//    {
-//       Data = 0x74;
-//       I2C_writeReg8(0x50, 0x17,Data);
-//       Data = I2C_readReg8(0x50,0x17);
-//    }
+    IICRXWord = ISL94202_ReadCellBalanceStartV();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1700))
+    {
+        ISL94202_setCellBalanceStartV(1700);
+        printf("setCellBalanceStartV\r\n");
+    }
+    else
+    {
+        printf("CellBalanceStartV OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadCellBalanceStopV();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4400))
+    {
+        ISL94202_setCellBalanceStopV(4400);
+        printf("setCellBalanceStopV\r\n");
+    }
+    else
+    {
+        printf("CellBalanceStopV OK\r\n");
+    }
 
     while(1)
     {
