@@ -31,6 +31,9 @@ unsigned int ISL94202_getPackCurrentMA();
 unsigned char ISL94202_getBalancingCells();
 
 unsigned char ISL94202_getCurrentStatus(unsigned char index);
+
+unsigned int ISL94202_getCurrentTemperature(unsigned char index);
+
 enum
 {
     DischargeOC_4mV = 0x00,
@@ -114,4 +117,6 @@ void ISL94202_writeEEPROMVoltage(unsigned char add, unsigned int mV,
 void ISL94202_writeEEPROMTimeout(unsigned char add, unsigned int timeout,
                                  unsigned char timeScale,
                         unsigned char headerFourBits);
+
+void ISL94202_Init();
 #endif /* ISL94202_H_ */

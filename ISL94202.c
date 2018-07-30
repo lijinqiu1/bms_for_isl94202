@@ -6,9 +6,11 @@
  */
 
 #include "ISL94202.h"
+#include "app_trace.h"
 
 unsigned char CurrentStatusBuffer[5]; //Stores current device status + balancing information
 unsigned char CurrentVoltageBuffer[22];
+unsigned char CurrentTemperatureBuffer[6];
 unsigned char EEPROMScratch[4]; //Used to buffer the user EEPOM [used for cal data]
 
 /////////////////////////////////// SETTINGS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -162,6 +164,35 @@ void ISL94202_setCellCountSleepTimes(unsigned char cellCount, unsigned char idle
     output |= sleepModeTimeout;
     ISL94202_writeEEPROMWord(0x48, output);
 }
+
+unsigned char ISL94202_getCellCount()
+{
+    unsigned char cellMask = 0;
+    unsigned char cellCount = 3;
+    cellMask = ISL94202_readEEPROM(0x49);
+    switch(cellMask)
+    {
+    case 0b10000011:
+        cellCount = 3;
+        break;
+    case 0b11000011:
+        cellCount = 4;
+        break;
+    case 0b11000111:
+        cellCount = 5;
+        break;
+    case 0b11100111:
+        cellCount = 6;
+        break;
+    case 0b11101111:
+        cellCount = 7;
+        break;
+    case 0b01111111:
+        cellCount = 8;
+        break;
+    }
+    return cellCount;
+}
 void ISL94202_setCellBalanceDifference(unsigned int mV)
 {
     //If the cells are closer than this the balancing stops
@@ -205,7 +236,7 @@ unsigned int ISL94202_ReadCellBalanceFaultLevel()
 }
 
 void ISL94202_setFeature1(bool CellFActivatesPSD, bool XT2Mode, bool TGain,
-bool PreChargeFETEnabled,
+                          bool PreChargeFETEnabled,
                           bool disableOpenWireScan,
                           bool OpenWireSetsPSD)
 {
@@ -220,7 +251,7 @@ bool PreChargeFETEnabled,
     ISL94202_writeEEPROM(0x4A, output);
 }
 void ISL94202_setFeature2(bool CellBalanceDuringDischarge,
-bool CellbalanceDuringCharge,
+                          bool CellbalanceDuringCharge,
                           bool keepDFETonDuringCharge,
                           bool keepCFETonDuringDischarge,
                           bool shutdownOnUVLO,
@@ -441,6 +472,7 @@ void ISL94202_updateReadings()
 {
 //read from 0x8A 22 bytes
     I2C_readMany(ISLADDRESS, 0x8A, 22, CurrentVoltageBuffer);
+    I2C_readMany(ISLADDRESS, 0xA0, 6, CurrentTemperatureBuffer);
 }
 
 //Updates the buffer of the status registers
@@ -466,6 +498,16 @@ unsigned int ISL94202_getCellVoltageMV(unsigned char index)
 
 }
 
+unsigned int ISL94202_getCurrentTemperature(unsigned char index)
+{
+    unsigned int r1 = CurrentTemperatureBuffer[(index * 2)];
+    unsigned int r2 = CurrentTemperatureBuffer[(index * 2) + 1] & 0x0F;
+    unsigned int reading = (unsigned int) (r2 << 8 | r1);
+    float value = 0;
+
+    value = (float)reading * 4.0 / 9.0;
+    return value;
+}
 unsigned char ISL94202_getCurrentStatus(unsigned char index)
 {
     return CurrentStatusBuffer[index];
@@ -488,4 +530,146 @@ unsigned int ISL94202_getPackCurrentMA(unsigned int divisor)
 unsigned char ISL94202_getBalancingCells()
 {
     return CurrentStatusBuffer[4];
+}
+
+void ISL94202_Init(void)
+{
+    unsigned char IICRXByte;
+    unsigned int IICRXWord = 0x00;
+    IICRXWord = ISL94202_ReadOVThres();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    {
+        ISL94202_setOVThres(4500);
+        app_trace_log("setOVThres\r\n");
+    }
+    else
+    {
+        app_trace_log("OVThres OK\r\n");
+    }
+
+
+    IICRXWord = ISL94202_ReadOVRecovery();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    {
+        ISL94202_setOVRecovery(4500);
+        app_trace_log("setOVRecovery\r\n");
+    }
+    else
+    {
+        app_trace_log("OVRecovery OK\r\n");
+    }
+
+
+    IICRXWord = ISL94202_ReadUVThres();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    {
+        ISL94202_setUVThres(1500);
+        app_trace_log("setUVThres\r\n");
+    }
+    else
+    {
+        app_trace_log("UVThres OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadUVRecovery();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    {
+        ISL94202_setUVRecovery(1500);
+        app_trace_log("setUVRecovery\r\n");
+    }
+    else
+    {
+        app_trace_log("UVThres OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadOVLockout();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    {
+        ISL94202_setOVLockout(4500);
+        app_trace_log("setOVLockout\r\n");
+    }
+    else
+    {
+        app_trace_log("OVLockout OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadUVLockout();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    {
+        ISL94202_setUVLockout(1500);
+        app_trace_log("setUVLockout\r\n");
+    }
+    else
+    {
+        app_trace_log("UVLockout OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadEOCThreshold();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    {
+        ISL94202_setEOCThreshold(4500);
+        app_trace_log("setEOCThreshold\r\n");
+    }
+    else
+    {
+        app_trace_log("EOCThreshold OK\r\n");
+    }
+
+    IICRXByte=ISL94202_getCellCount();
+    if (IICRXByte != 4)
+    {
+        ISL94202_setCellCountSleepTimes(4,15,15);
+        app_trace_log("setCellCount\r\n");
+    }
+    else
+    {
+        app_trace_log("CellCount OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadCellBalanceStartV();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1700))
+    {
+        ISL94202_setCellBalanceStartV(1700);
+        app_trace_log("setCellBalanceStartV\r\n");
+    }
+    else
+    {
+        app_trace_log("CellBalanceStartV OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadCellBalanceStopV();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4400))
+    {
+        ISL94202_setCellBalanceStopV(4400);
+        app_trace_log("setCellBalanceStopV\r\n");
+    }
+    else
+    {
+        app_trace_log("CellBalanceStopV OK\r\n");
+    }
+
+    IICRXWord = ISL94202_ReadCellBalanceFaultLevel();
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(500))
+    {
+        ISL94202_setCellBalanceFaultLevel(500);
+        app_trace_log("setCellBalanceFaultLevel\r\n");
+    }
+    else
+    {
+        app_trace_log("CellBalanceFaultLevel OK\r\n");
+    }
+
+    IICRXByte=ISL94202_readEEPROM(0x4A);
+    app_trace_log("Feature Controls one 0x%02x\r\n",IICRXByte);
+
+    IICRXByte=ISL94202_readEEPROM(0x4B);
+    if ((IICRXByte&0xC0) != 0xC0)
+    {
+        ISL94202_setFeature2(true,true,false,false,false,false);
+        app_trace_log("set Feature Controls\r\n");
+    }
+    else
+    {
+        app_trace_log("Feature Controls OK 0x%02x\r\n",IICRXByte);
+    }
 }

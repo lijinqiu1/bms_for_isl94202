@@ -7,23 +7,23 @@
 //
 void MCP2515_SPI_init(void)
 {  
-  P1SEL = BIT1 + BIT2 + BIT5;                                                    // Spezial Funktion SCK, MOSI und MISO ...
-  P1SEL2 = BIT1 + BIT2 + BIT5;                                                   // (Falls P1SEL2 unterstützt).-
+  P1SEL = BIT1 + BIT2 + BIT4;                                                    // Spezial Funktion SCK, MOSI und MISO ...
+  P1SEL2 = BIT1 + BIT2 + BIT4;                                                   // (Falls P1SEL2 unterstützt).-
   
   P1DIR |= BIT0;                                                                 // !CS-Leitung (beachte auch Defines MCP2515_CS_LOW und MCP2515_CS_High)  ...
   P1OUT |= BIT0;                                                                 // .-
   
-  UCB0CTL1 |= UCSWRST;                                                           // Reset
-  UCB0CTL0 |= UCCKPL + UCMSB + UCMST + UCMODE_0 + UCSYNC;                        // 3-pin, 8-bit SPI master
-  UCB0CTL1 |= UCSSEL_2;                                                          // SMCLK
-  UCB0BR0 |= 0x02;                                                               // /2 ...
-  UCB0BR1 = 0;                                                                   // .-
+  UCA0CTL1 |= UCSWRST;                                                           // Reset
+  UCA0CTL0 |= UCCKPL + UCMSB + UCMST + UCMODE_0 + UCSYNC;                        // 3-pin, 8-bit SPI master
+  UCA0CTL1 |= UCSSEL_2;                                                          // SMCLK
+  UCA0BR0 |= 0x02;                                                               // /2 ...
+  UCA0BR1 = 0;                                                                   // .-
   //UCA0MCTL = 0;                                                                // No modulation
-  UCB0CTL1 &= ~UCSWRST;                                                          // Initialize USCI state machine
+  UCA0CTL1 &= ~UCSWRST;                                                          // Initialize USCI state machine
 
   __delay_cycles(DELAY_100ms);                                                   // Warte 100ms
-  while (!(IFG2 & UCB0TXIFG));                                                   // Warte bist übermittelt
-  UCB0TXBUF = 0x00;                                                              // Dummy Senden 
+  while (!(IFG2 & UCA0TXIFG));                                                   // Warte bist übermittelt
+  UCA0TXBUF = 0x00;                                                              // Dummy Senden
 } 
 
 //####################################################################################################################################################################################
@@ -38,9 +38,9 @@ void MCP2515_SPI_init(void)
 //
 unsigned char MCP2515_SPI_transmit(unsigned char daten)
 {   
-  UCB0TXBUF = daten;                                                             // Sende Datensatz
-  while(UCB0STAT & UCBUSY);                                                      // Warte bist übermittelt
-  return UCB0RXBUF;                                                              // Gebe empfangenen Datensatz zurück    
+  UCA0TXBUF = daten;                                                             // Sende Datensatz
+  while(UCA0STAT & UCBUSY);                                                      // Warte bist übermittelt
+  return UCA0RXBUF;                                                              // Gebe empfangenen Datensatz zurück
 } 
 
 //####################################################################################################################################################################################
@@ -123,7 +123,7 @@ void MCP2515_CanVariable_init (can_t *can)
   can->dlc = CAN_DLC;                                                            // Länge der Information (0 bis 8)
   can->rtr = CAN_RTR;                                                            // Request Data oder sende
   can->ext = CAN_EXTENDET;                                                       // Extender oder standart ID, hier standart genutzt
-  for(i = 0; i < CAN_DLC; i++)can->data[i] = 0;                             // Initialisiere mit 0
+  for(i = 0; i < CAN_DLC; i++)can->data[i] = i;                             // Initialisiere mit 0
 }
 
 
@@ -167,10 +167,10 @@ void MCP2515_write_many_registers(uint8_t addr, uint8_t len, uint8_t *data)
   
   MCP2515_SPI_transmit(MCP2515_WRITE);                                           // Schreibbefehl ; Befehl 0x02, ...
   MCP2515_SPI_transmit(addr);                                                    // sende Befehl (Register-Adresse), ...
-  for(i=0; i < len; i++)	                                                 // solange i < datenlänge,
+  for(i=0; i < len; i++)                                                     // solange i < datenlänge,
   {
     MCP2515_SPI_transmit(*data);                                                 // sende Daten für diese Adresse, ...
-    data++;			                                                 // nächstes byte vorbereiten, ...
+    data++;                                                          // nächstes byte vorbereiten, ...
   } // for
   
   MCP2515_CS_HIGH;                                                               // beende den Frame in dem ich !CS wieder auf High setze und ...
@@ -223,8 +223,8 @@ void MCP2515_read_many_registers(uint8_t addr, uint8_t length, uint8_t *data)
   MCP2515_SPI_transmit(MCP2515_WRITE);                                           // Schreibebefehl                                  
   MCP2515_SPI_transmit(addr);                                                    // Die dazugehörige Addresse
   
-  for(i=1; i < length; i++)	                                         //solange x < datengröße
-  {	
+  for(i=1; i < length; i++)                                          //solange x < datengröße
+  {
     *data = MCP2515_SPI_transmit(MCP2515_DUMMY);                                 // Sende den Dummy um die Informatinen, ...
     data++;                                                                      // zu erhalten. ...
   } // for
@@ -302,7 +302,7 @@ void MCP2515_read_id(uint8_t addr, unsigned long* id)
 
     *id = (unsigned long)ID_Low | (unsigned long)ID_High;
   }
-}	
+}
 
 //####################################################################################################################################################################################
 //                                                                      MCP2515_init()
@@ -319,16 +319,19 @@ void MCP2515_init(void)
   
   // ------ 2. Konfiguriere den Chip ------------------------------------------
   
-  MCP2515_write(MCP2515_CANCTRL, 0x88);	                                         // CAN Controel-Register. Gehe Konfiguration-Modus (Seite 58), eigentlich sollte aber dieser automatisch nach neustart dort sein 
-  MCP2515_write(MCP2515_CANINTE, 0x03);	                                         // Interrupt Enable-Register.  Aktiviere NUR RX0- und RX1-Interrupts (Datenblatt, Seite 50)
+  MCP2515_write(MCP2515_CANCTRL, 0x88);                                          // CAN Controel-Register. Gehe Konfiguration-Modus (Seite 58), eigentlich sollte aber dieser automatisch nach neustart dort sein
+  MCP2515_write(MCP2515_CANINTE, 0x03);                                          // Interrupt Enable-Register.  Aktiviere NUR RX0- und RX1-Interrupts (Datenblatt, Seite 50)
   MCP2515_write(MCP2515_TXB0CTRL, 0x03);                                         // Transmit Buffer Control-Register (Datenblatt, Seite 18). Highes Message Priority (interessant wenn mehrere Buffer genutzt)
   
   // ------ 2a Bit Timing ------------------------------------------------------
-
-  MCP2515_write(MCP2515_CNF1,0x1f);                                   	         // Bei 16MHz -> 250kb/s. Beachte um mehr als 125kBaud zu bekommen, muss ein externer Quarz von 16MHz ...
-  MCP2515_write(MCP2515_CNF2,0xbf);	                                         // angelötet sein. Die Werte für CNF1, CNF2 und CNF3, kann man leicht aus der Microchi-Software bekommen. ...
-  MCP2515_write(MCP2515_CNF3,0x07);                              		 // Dazu lade Programm: "Microchip Can Bit Timing Calculator" runter und führe es als ADMIN aus.-
-  
+//10kbps
+//  MCP2515_write(MCP2515_CNF1,0x1f);                                              // Bei 16MHz -> 250kb/s. Beachte um mehr als 125kBaud zu bekommen, muss ein externer Quarz von 16MHz ...
+//  MCP2515_write(MCP2515_CNF2,0xbf);                                              // angelötet sein. Die Werte für CNF1, CNF2 und CNF3, kann man leicht aus der Microchi-Software bekommen. ...
+//  MCP2515_write(MCP2515_CNF3,0x07);                                              // Dazu lade Programm: "Microchip Can Bit Timing Calculator" runter und führe es als ADMIN aus.-
+//250kbps
+  MCP2515_write(MCP2515_CNF1,0x01);                                              // Bei 16MHz -> 250kb/s. Beachte um mehr als 125kBaud zu bekommen, muss ein externer Quarz von 16MHz ...
+  MCP2515_write(MCP2515_CNF2,0xB0);                                              // angelötet sein. Die Werte für CNF1, CNF2 und CNF3, kann man leicht aus der Microchi-Software bekommen. ...
+  MCP2515_write(MCP2515_CNF3,0x06);                                              // Dazu lade Programm: "Microchip Can Bit Timing Calculator" runter und führe es als ADMIN aus.-
   // ------ 2b Filter einsetzen -----------------------------------------------
   
   MCP2515_write(MCP2515_RXB0CTRL, 0x64);                                         // Receive Buffer 0 Control, Alle Nachrichten Empfangen, falls nötig RX1 weiterleiten (siehe Datenblatt, Seite 27)
@@ -479,7 +482,7 @@ void MCP2515_can_rx0(can_t *can)
   for(i = 0; i < can->dlc; i++) can->data[i] = MCP2515_read(MCP2515_RXB0D0+i);
   can->status = can->data[0];
   
-  MCP2515_clear_rx0();			                                         //löscht die register des rx0
+  MCP2515_clear_rx0();                                                   //löscht die register des rx0
   MCP2515_int_clear();  
   
   __delay_cycles(DELAY_1ms);
@@ -502,7 +505,7 @@ void MCP2515_can_rx1(can_t *can)
   for(i = 0; i < can->dlc; i++) can->data[i] = MCP2515_read(MCP2515_RXB1D0+i);
   can->status = can->data[0];
   
-  MCP2515_clear_rx1();	
+  MCP2515_clear_rx1();
   MCP2515_int_clear();
   
   __delay_cycles(DELAY_1ms);
