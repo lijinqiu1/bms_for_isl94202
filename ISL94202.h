@@ -15,7 +15,36 @@
 #define ISL94202_H_
 #include <stdbool.h>
 #include "iic.h"
+
 #define ISLADDRESS 0x28
+
+#define ISL_OVTHRES            4500
+#define ISL_OVRECEOVERY        4500
+#define ISL_UVTHRES            1500
+#define ISL_UVRECEOVERY        1500
+#define ISL_OVLOCKOUT          4500
+#define ISL_UVLOCKOUT          1500
+#define ISL_EOCTHRESHOLD       4500
+#define ISL_CELLBALANCESTARTV  4200
+#define ISL_CELLBALANCESTOP    4400
+#define ISL_CELLBALANCELEVEL    500
+
+#define ISL_setFeature1(CellFActivatesPSD, XT2Mode, TGain, PreChargeFETEnabled, disableOpenWireScan, OpenWireSetsPSD) \
+    (unsigned char)((CellFActivatesPSD ? 1 << 7 : 0)|\
+            (XT2Mode ? 1 << 5 : 0)|\
+            (TGain ? 1 << 4 : 0)|\
+            (PreChargeFETEnabled ? 1 << 2 : 0)|\
+            (disableOpenWireScan ? 1 << 1 : 0)|\
+            (OpenWireSetsPSD ? 1 : 0))
+
+#define ISL_setFeature2(CellBalanceDuringDischarge, CellbalanceDuringCharge, keepDFETonDuringCharge, keepCFETonDuringDischarge,shutdownOnUVLO, enableBalanceAtEOC) \
+    (unsigned char)((CellBalanceDuringDischarge ? 1 << 7 : 0)|\
+            (CellbalanceDuringCharge ? 1 << 6 : 0)|\
+            (keepDFETonDuringCharge ? 1 << 5 : 0)|\
+            (keepCFETonDuringDischarge ? 1 << 4 : 0)|\
+            (shutdownOnUVLO ? 1 << 3 : 0)|\
+            (enableBalanceAtEOC ? 1 : 0))
+
 //Update the cell voltage and current readings from the unit
 void ISL94202_updateReadings();
 //Updates the buffer of the status registers
@@ -36,8 +65,8 @@ unsigned int ISL94202_getCurrentTemperature(unsigned char index);
 
 enum
 {
-    DischargeOC_4mV = 0x00,
-    DischargeOC_8mV = 0x01,
+    DischargeOC_4mV  = 0x00,
+    DischargeOC_8mV  = 0x01,
     DischargeOC_16mV = 0x02,
     DischargeOC_24mV = 0x03,
     DischargeOC_32mV = 0x04,
@@ -48,9 +77,9 @@ enum
 
 enum
 {
-    Time_Base_us = 0x00,
-    Time_Base_ms = 0x01,
-    Time_Base_s = 0x02,
+    Time_Base_us  = 0x00,
+    Time_Base_ms  = 0x01,
+    Time_Base_s   = 0x02,
     Time_Base_min = 0x03,
 };
 /////////////////////////////////// SETTINGS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

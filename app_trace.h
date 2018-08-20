@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define UART_PRINTF
+//#define UART_PRINTF
 
 #ifdef UART_PRINTF
 int fputc(int _c, register FILE *_fp);

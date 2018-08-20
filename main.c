@@ -53,39 +53,53 @@ int main(void)
 
     BCSCTL1 = CALBC1_1MHZ;                    // Set range
     DCOCTL  = CALDCO_1MHZ;
-//    uart_init();
+#ifdef UART_PRINTF
+    uart_init();
+#else
     MCP2515_SPI_init();
+    MCP2515_spi_test();
+    MCP2515_CanVariable_init (&can_tx);                                            // Initialisiert Sendevariable
+#endif
     // initialize Timer_A module
     TACCR0 = 12500;
     TACTL = TASSEL_2 + MC_1 + TACLR + ID_3;   // ACLK, up mode, clear TAR
     TACCTL0 |= CCIE;                          // CCR0 interrupt enabled
     _BIS_SR(GIE);              //¿ª×ÜÖÐ¶Ï
 
-//    ISL94202_Init();
-    MCP2515_spi_test();
-    MCP2515_init();                                                                // Initialisiert MCP2515
-    MCP2515_CanVariable_init (&can_tx);                                            // Initialisiert Sendevariable
+    ISL94202_Init();
 
     while(1)
     {
         __bis_SR_register(LPM1_bits);       // Enter LPM3, enable interrupts
+        ISL94202_updateReadings();                  //load in new I2C data
+        ISL94202_updateStatus();
+#ifndef UART_PRINTF
+        can_tx.COB_ID = 0x180;
+        can_tx.data[0] = (uint8_t)ISL94202_getCellVoltageMV(0);
+        can_tx.data[1] = (uint8_t)(ISL94202_getCellVoltageMV(0)>>8);
+        can_tx.data[2] = (uint8_t)ISL94202_getCellVoltageMV(1);;
+        can_tx.data[3] = (uint8_t)(ISL94202_getCellVoltageMV(1)>>8);
+        can_tx.data[4] = (uint8_t)ISL94202_getCellVoltageMV(6);;
+        can_tx.data[5] = (uint8_t)(ISL94202_getCellVoltageMV(6)>>8);
+        can_tx.data[6] = (uint8_t)ISL94202_getCellVoltageMV(7);;
+        can_tx.data[7] = (uint8_t)(ISL94202_getCellVoltageMV(7)>>8);
         MCP2515_can_tx0(&can_tx);                                                      // Sende das Empfangene zurück (Echo)
-//        ISL94202_updateReadings();                  //load in new I2C data
-//        ISL94202_updateStatus();
-//        app_trace_log("v1 %04d V2 %04d V3 %04d V4 %04d I %04d X1 %04d X2 %04d 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\r\n",
-//               ISL94202_getCellVoltageMV(0),
-//               ISL94202_getCellVoltageMV(1),
-//               ISL94202_getCellVoltageMV(6),
-//               ISL94202_getCellVoltageMV(7),
-//               ISL94202_getCurrentTemperature(0),
-//               ISL94202_getCurrentTemperature(1),
-//               ISL94202_getCurrentTemperature(2),
-//               ISL94202_getCurrentStatus(0),
-//               ISL94202_getCurrentStatus(1),
-//               ISL94202_getCurrentStatus(2),
-//               ISL94202_getCurrentStatus(3),
-//               ISL94202_getBalancingCells(),
-//               P2IN&0x0f);
+#else
+        app_trace_log("v1 %04d V2 %04d V3 %04d V4 %04d I %04d X1 %04d X2 %04d 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\r\n",
+               ISL94202_getCellVoltageMV(0),
+               ISL94202_getCellVoltageMV(1),
+               ISL94202_getCellVoltageMV(6),
+               ISL94202_getCellVoltageMV(7),
+               ISL94202_getCurrentTemperature(0),
+               ISL94202_getCurrentTemperature(1),
+               ISL94202_getCurrentTemperature(2),
+               ISL94202_getCurrentStatus(0),
+               ISL94202_getCurrentStatus(1),
+               ISL94202_getCurrentStatus(2),
+               ISL94202_getCurrentStatus(3),
+               ISL94202_getBalancingCells(),
+               P2IN&0x0f);
+#endif
     }
 }
 

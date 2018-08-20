@@ -508,10 +508,12 @@ unsigned int ISL94202_getCurrentTemperature(unsigned char index)
     value = (float)reading * 4.0 / 9.0;
     return value;
 }
+
 unsigned char ISL94202_getCurrentStatus(unsigned char index)
 {
     return CurrentStatusBuffer[index];
 }
+
 //Returns the pack current in milliamps
 unsigned int ISL94202_getPackCurrentMA(unsigned int divisor)
 {
@@ -532,14 +534,15 @@ unsigned char ISL94202_getBalancingCells()
     return CurrentStatusBuffer[4];
 }
 
+
 void ISL94202_Init(void)
 {
     unsigned char IICRXByte;
     unsigned int IICRXWord = 0x00;
     IICRXWord = ISL94202_ReadOVThres();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_OVTHRES))
     {
-        ISL94202_setOVThres(4500);
+        ISL94202_setOVThres(ISL_OVTHRES);
         app_trace_log("setOVThres\r\n");
     }
     else
@@ -549,9 +552,9 @@ void ISL94202_Init(void)
 
 
     IICRXWord = ISL94202_ReadOVRecovery();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_OVRECEOVERY))
     {
-        ISL94202_setOVRecovery(4500);
+        ISL94202_setOVRecovery(ISL_OVRECEOVERY);
         app_trace_log("setOVRecovery\r\n");
     }
     else
@@ -561,9 +564,9 @@ void ISL94202_Init(void)
 
 
     IICRXWord = ISL94202_ReadUVThres();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_UVTHRES))
     {
-        ISL94202_setUVThres(1500);
+        ISL94202_setUVThres(ISL_UVTHRES);
         app_trace_log("setUVThres\r\n");
     }
     else
@@ -572,9 +575,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadUVRecovery();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_UVRECEOVERY))
     {
-        ISL94202_setUVRecovery(1500);
+        ISL94202_setUVRecovery(ISL_UVRECEOVERY);
         app_trace_log("setUVRecovery\r\n");
     }
     else
@@ -583,9 +586,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadOVLockout();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_OVLOCKOUT))
     {
-        ISL94202_setOVLockout(4500);
+        ISL94202_setOVLockout(ISL_OVLOCKOUT);
         app_trace_log("setOVLockout\r\n");
     }
     else
@@ -594,9 +597,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadUVLockout();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_UVLOCKOUT))
     {
-        ISL94202_setUVLockout(1500);
+        ISL94202_setUVLockout(ISL_UVLOCKOUT);
         app_trace_log("setUVLockout\r\n");
     }
     else
@@ -605,7 +608,7 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadEOCThreshold();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_EOCTHRESHOLD))
     {
         ISL94202_setEOCThreshold(4500);
         app_trace_log("setEOCThreshold\r\n");
@@ -627,9 +630,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadCellBalanceStartV();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(1700))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_CELLBALANCESTARTV))
     {
-        ISL94202_setCellBalanceStartV(1700);
+        ISL94202_setCellBalanceStartV(ISL_CELLBALANCESTARTV);
         app_trace_log("setCellBalanceStartV\r\n");
     }
     else
@@ -638,9 +641,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadCellBalanceStopV();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(4400))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_CELLBALANCESTOP))
     {
-        ISL94202_setCellBalanceStopV(4400);
+        ISL94202_setCellBalanceStopV(ISL_CELLBALANCESTOP);
         app_trace_log("setCellBalanceStopV\r\n");
     }
     else
@@ -649,9 +652,9 @@ void ISL94202_Init(void)
     }
 
     IICRXWord = ISL94202_ReadCellBalanceFaultLevel();
-    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(500))
+    if (IICRXWord != ISL94202_milliVoltsToVScaleRaw(ISL_CELLBALANCELEVEL))
     {
-        ISL94202_setCellBalanceFaultLevel(500);
+        ISL94202_setCellBalanceFaultLevel(ISL_CELLBALANCELEVEL);
         app_trace_log("setCellBalanceFaultLevel\r\n");
     }
     else
@@ -663,9 +666,9 @@ void ISL94202_Init(void)
     app_trace_log("Feature Controls one 0x%02x\r\n",IICRXByte);
 
     IICRXByte=ISL94202_readEEPROM(0x4B);
-    if ((IICRXByte&0xC0) != 0xC0)
+    if ((IICRXByte&0x40) != ISL_setFeature2(false,true,false,false,false,false))
     {
-        ISL94202_setFeature2(true,true,false,false,false,false);
+        ISL94202_setFeature2(false,true,false,false,false,false);
         app_trace_log("set Feature Controls\r\n");
     }
     else
